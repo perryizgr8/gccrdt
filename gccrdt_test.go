@@ -2,6 +2,7 @@ package gccrdt_test
 
 import (
 	gccrdt "gc-crdt"
+	"math/rand/v2"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -78,4 +79,28 @@ func TestValue_HundredWithTwoNodes(t *testing.T) {
 		gc.Increment(node2)
 	}
 	assert.Equal(t, 200, gc.Value())
+}
+
+func TestMerge(t *testing.T) {
+	gc := gccrdt.NewGccrdt()
+	for range 100 {
+		gc.Increment(node1)
+	}
+	for range 50 {
+		gc.Increment(node2)
+	}
+	others := [1000]map[string]int{}
+	for i := range others {
+		others[i] = make(map[string]int)
+	}
+	node1Max := 100
+	node2Max := 50
+	for _, other := range others {
+		other[node1] = rand.IntN(100)
+		node1Max = max(node1Max, other[node1])
+		other[node2] = rand.IntN(100)
+		node2Max = max(node2Max, other[node2])
+	}
+	gc.Merge(others[:]...)
+	assert.Equal(t, node1Max+node2Max, gc.Value())
 }
